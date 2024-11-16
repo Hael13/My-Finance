@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">My Finance</string>
+    <string name="add_category">Добавить</string>
+</resources>
