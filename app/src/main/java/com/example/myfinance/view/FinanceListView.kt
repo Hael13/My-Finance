@@ -26,7 +26,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -36,10 +35,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.example.myfinance.FinanceViewModelFactory
-import com.example.myfinance.model.Categories
 import com.example.myfinance.model.Finance
 import com.example.myfinance.model.FinanceViewModel
 import com.example.myfinance.navigation.NavigationRoutes
@@ -51,9 +47,9 @@ import com.example.myfinance.ui.theme.getTextColor
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FinanceListPage(navController: NavHostController) {
-    val viewModel: FinanceViewModel = viewModel(factory = FinanceViewModelFactory.Factory)
-    val chooseFrom = {navController.navigate(NavigationRoutes.fromDatePicker)}
-    val chooseTo = {navController.navigate(NavigationRoutes.toDatePicker)}
+    val viewModel: FinanceViewModel = FinanceViewModel.get()//viewModel(factory = FinanceViewModelFactory.Factory)
+    val chooseFrom = { navController.navigate(NavigationRoutes.fromDatePicker) }
+    val chooseTo = { navController.navigate(NavigationRoutes.toDatePicker) }
 
     val pagerState = rememberPagerState(pageCount = { 2 })
 
@@ -61,31 +57,21 @@ fun FinanceListPage(navController: NavHostController) {
     val listHeight = LocalConfiguration.current.screenHeightDp - infoHeight - 40
 
     var isNewCategoryDialogOpen by remember { mutableStateOf(false) }
-    val toggleNewCategoryDialog = {isNewCategoryDialogOpen = !isNewCategoryDialogOpen}
-    var chosenCategory by remember { mutableLongStateOf(0L) }
-    val closeNewOperationDialog = {chosenCategory = 0L}
+    val toggleNewCategoryDialog = { isNewCategoryDialogOpen = !isNewCategoryDialogOpen }
 
     val addCategory: (String) -> Unit
-    val addOperation: (Long, Float) -> Unit
-    if(pagerState.currentPage == 0){
+    if (pagerState.currentPage == 0) {
         addCategory = viewModel::addExpenseCategory
-        addOperation = viewModel::addExpenseOperation
-    }else{
+    } else {
         addCategory = viewModel::addIncomeCategory
-        addOperation = viewModel::addIncomeOperation
     }
     if (isNewCategoryDialogOpen)
         NewCategoryScreen({ name -> addCategory(name) }, toggleNewCategoryDialog)
-    if (chosenCategory > 0) {
-        val category by viewModel.financeRepository.getCategory(chosenCategory)
-            .collectAsState(initial = Categories(chosenCategory, "", false))
-        NewOperationScreen(category, addOperation, closeNewOperationDialog)
-    }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.padding(top = 40.dp)
     ) {
-        FinanceList(pagerState, listHeight, { chosenCategory = it })
+        FinanceList(pagerState, listHeight, { categoryId -> navController.navigate("operation/$categoryId") })
         AddCategoryButton(toggleNewCategoryDialog)
         FinanceInfo(infoHeight, chooseFrom, chooseTo)
     }
@@ -94,7 +80,7 @@ fun FinanceListPage(navController: NavHostController) {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FinanceList(pagerState: PagerState, listHeight: Int, onEntryClick: (Long) -> Unit) {
-    val viewModel: FinanceViewModel = viewModel(factory = FinanceViewModelFactory.Factory)
+    val viewModel: FinanceViewModel = FinanceViewModel.get()//viewModel(factory = FinanceViewModelFactory.Factory)
     val tabs = arrayOf("Расходы", "Доходы")
     TabRow(selectedTabIndex = pagerState.currentPage, indicator = { tabPositions ->
         TabRowDefaults.Indicator(
@@ -109,8 +95,8 @@ private fun FinanceList(pagerState: PagerState, listHeight: Int, onEntryClick: (
     }
     HorizontalPager(state = pagerState, verticalAlignment = Alignment.Top) {
         val financeList by
-        if (it == 0) viewModel.getExpenses().collectAsState(initial = listOf())
-        else viewModel.getIncomes().collectAsState(initial = listOf())
+            if (it == 0) viewModel.getExpenses().collectAsState(initial = listOf())
+            else viewModel.getIncomes().collectAsState(initial = listOf())
         LazyColumn(modifier = Modifier.height(listHeight.dp), state = rememberLazyListState()) {
             items(items = financeList, key = { it.id }){
                 FinanceItem(it, onEntryClick)
@@ -129,7 +115,7 @@ private fun AddCategoryButton(toggleNewCategoryDialog: ()->Unit) {
 
 @Composable
 private fun FinanceInfo(infoHeight: Int, chooseFrom: ()->Unit, chooseTo: ()->Unit) {
-    val viewModel: FinanceViewModel = viewModel(factory = FinanceViewModelFactory.Factory)
+    val viewModel: FinanceViewModel = FinanceViewModel.get()//viewModel(factory = FinanceViewModelFactory.Factory)
     val incomeTotal by viewModel.getTotalIncome().collectAsState(0.00)
     val expenseTotal by viewModel.getTotalExpense().collectAsState(0.00)
     val total by viewModel.getTotal().collectAsState(0.00)

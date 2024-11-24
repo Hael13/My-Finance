@@ -15,8 +15,22 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
-class FinanceViewModel(val context: Context,
-                       val financeRepository: FinanceRepository): ViewModel() {
+class FinanceViewModel private constructor(val context: Context,
+                                           val financeRepository: FinanceRepository): ViewModel() {
+
+    companion object {
+        const val insertErrorText = "Не удалось создать новую запись"
+        const val insertSuccessText = "Новая запись создана"
+        private var INSTANCE: FinanceViewModel? = null
+        fun initialize(context: Context, financeRepository: FinanceRepository) {
+            if (INSTANCE == null) {
+                INSTANCE = FinanceViewModel(context, financeRepository)
+            }
+        }
+        fun get(): FinanceViewModel {
+            return INSTANCE ?: throw IllegalStateException("FinanceViewModel must be initialized")
+        }
+    }
 
     var fromMillis: Long
     var toMillis: Long
@@ -30,11 +44,6 @@ class FinanceViewModel(val context: Context,
         get() = LocalDate.ofEpochDay(fromMillis/ DateUtils.DAY_IN_MILLIS).format(DateTimeFormatter.ISO_DATE)//dateRange.selectedStartDateMillis!!
     val toStr: String
         get() = LocalDate.ofEpochDay(toMillis/ DateUtils.DAY_IN_MILLIS).format(DateTimeFormatter.ISO_DATE)//dateRange.selectedEndDateMillis!!
-
-    companion object {
-        const val insertErrorText = "Не удалось создать новую запись"
-        const val insertSuccessText = "Новая запись создана"
-    }
 
     fun addExpenseCategory(name: String){
         viewModelScope.launch {
@@ -59,6 +68,13 @@ class FinanceViewModel(val context: Context,
             }else{
                 Toast.makeText(context, insertErrorText, Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    fun addOperation(id: Long, isIncome: Boolean, cost: Float){
+        viewModelScope.launch(Dispatchers.IO) {
+            if(isIncome) financeRepository.addOperation(id, cost)
+            else financeRepository.addOperation(id, -cost)
         }
     }
 

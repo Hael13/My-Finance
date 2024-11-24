@@ -13,24 +13,30 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.myfinance.FinanceViewModelFactory
+import androidx.navigation.navArgument
 import com.example.myfinance.model.FinanceViewModel
 import com.example.myfinance.ui.theme.getPrimaryColor
 import com.example.myfinance.view.FinanceListPage
+import com.example.myfinance.view.NewOperationScreen
 import java.time.LocalDate
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun NavHostGraph(navController: NavHostController){
-    val viewModel: FinanceViewModel = viewModel(factory = FinanceViewModelFactory.Factory)
+    val viewModel: FinanceViewModel = FinanceViewModel.get()//viewModel(factory = FinanceViewModelFactory.Factory)
     Scaffold {
         NavHost(navController = navController, startDestination = NavigationRoutes.list) {
             composable(NavigationRoutes.list) {
                 FinanceListPage(navController)
+            }
+            composable(NavigationRoutes.addOperation,
+                arguments = listOf(navArgument("categoryId") { type = NavType.LongType })) {
+                val categoryId = it.arguments?.getLong("categoryId")!!
+                NewOperationScreen(navController, categoryId)
             }
             composable(NavigationRoutes.fromDatePicker) {
                 CallDatePicker(

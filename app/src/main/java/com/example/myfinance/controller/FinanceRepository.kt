@@ -7,7 +7,19 @@ import com.example.myfinance.model.Operations
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 
-class FinanceRepository(private val financeDao: FinanceDao) {
+class FinanceRepository private constructor(private val financeDao: FinanceDao) {
+
+    companion object {
+        private var INSTANCE: FinanceRepository? = null
+        fun initialize(financeDao: FinanceDao) {
+            if (INSTANCE == null) {
+                INSTANCE = FinanceRepository(financeDao)
+            }
+        }
+        fun get(): FinanceRepository {
+            return INSTANCE ?: throw IllegalStateException("FinanceDao must be initialized")
+        }
+    }
 
     fun getExpenses(begin: Long, end: Long): Flow<List<Finance>> {
         return financeDao.readFinances(begin, end, false)
